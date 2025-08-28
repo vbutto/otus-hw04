@@ -1,7 +1,0 @@
-provider "yandex" {
-#  service_account_key_file = "C:/otus/scripts/new_authorized_key.json"
-#
-#  cloud_id  = "my_default_cloud_id"
-#  folder_id = "my_default_folder_id"
-#  zone      = "my_default_zone"
-}

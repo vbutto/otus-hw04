@@ -10,7 +10,6 @@ override.tf.json
 .terraformrc
 terraform.rc
 
-
 # Vars & secrets
 *.tfvars
 *.tfvars.json
@@ -20,11 +19,6 @@ terraform.rc
 *.key
 *.p12
 *.json
-
-
-# Local only provider config
-providers.tf
-
 
 # Logs
 *.log
