@@ -1,0 +1,74 @@
+1. Из интернета доступен только frontend:80
+
+Команда на вашей машине:
+
+curl http://$(terraform output -raw frontend_public_ip)
+curl http://89.169.155.9
+
+Ожидаемо: HTML с заголовком “FRONTEND OK”.
+
+Скриншот: страница в браузере по http://<frontend_public_ip>/.
+http://89.169.155.9
+
+
+2. Backend (3000) и DB (6000) недоступны снаружи
+
+Попытка с вашей машины:
+
+curl -m 5 http://<frontend_public_ip>:3000 || echo "timeout - ok"
+curl -m 5 http://<frontend_public_ip>:6000 || echo "timeout - ok"
+
+curl -m 5 http://89.169.155.9:3000 || echo "timeout - ok"
+curl -m 5 http://89.169.155.9:6000 || echo "timeout - ok"
+
+
+Ожидаемо: timeout/connection refused.
+
+Скриншот: вывод терминала.
+
+3. Frontend → Backend работает
+
+Зайдите по SSH на frontend:
+
+ssh ubuntu@$(terraform output -raw frontend_public_ip)
+curl -m 5 http://10.10.20.10:3000 || curl -m 5 http://$(getent hosts vm-backend | awk '{print $1}'):3000
+
+ssh ubuntu@89.169.155.9
+curl -m 5 http://10.10.20.22:3000 || curl -m 5 http://$(getent hosts vm-backend | awk '{print $1}'):3000
+
+
+
+Ожидаемо: “BACKEND OK”.
+
+Скриншот: вывод curl с фронтенда.
+
+
+5. Backend → DB работает, Frontend → DB запрещён
+
+На frontend:
+
+curl -m 5 http://$(terraform output -raw db_ip):6000 || echo "no access - ok"
+curl -m 5 http://10.10.30.33:6000 || echo "no access - ok"
+
+
+Ожидаемо: нет доступа (timeout/blocked).
+
+
+Backend → DB работает
+На backend (подключиться можно транзитом через bastion):
+ssh -J ubuntu@51.250.82.79 ubuntu@10.10.20.22 "curl -m 5 http://10.10.30.33:6000"
+
+
+Frontend → DB запрещён
+На Frontend подключаемся напрямую, с неё обращаемся к DB
+ssh -J ubuntu@89.169.155.9 "curl -m 5 http://10.10.30.33:6000"
+
+
+curl -m 5 http://$(terraform output -raw db_ip):6000
+
+
+curl -m 5 http://$(terraform output -raw db_ip):6000
+
+Ожидаемо: “DATABASE OK”.
+
+Скриншоты: оба вывода.

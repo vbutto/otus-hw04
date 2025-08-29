@@ -8,8 +8,9 @@ resource "yandex_compute_instance" "vm_front" {
   platform_id = "standard-v3"
 
   resources {
-    cores  = 2
-    memory = 2
+    cores         = 2
+    memory        = 2
+    core_fraction = 20
   }
 
   scheduling_policy {
@@ -26,6 +27,7 @@ resource "yandex_compute_instance" "vm_front" {
 
   network_interface {
     subnet_id          = yandex_vpc_subnet.sub_front.id
+    ip_address         = var.frontend_ip
     nat                = true
     security_group_ids = [yandex_vpc_security_group.sg_front.id]
   }
@@ -43,8 +45,9 @@ resource "yandex_compute_instance" "vm_back" {
   platform_id = "standard-v3"
 
   resources {
-    cores  = 2
-    memory = 2
+    cores         = 2
+    memory        = 2
+    core_fraction = 20
   }
 
   scheduling_policy {
@@ -61,6 +64,7 @@ resource "yandex_compute_instance" "vm_back" {
 
   network_interface {
     subnet_id          = yandex_vpc_subnet.sub_back.id
+    ip_address         = var.backend_ip
     nat                = false
     security_group_ids = [yandex_vpc_security_group.sg_back.id]
   }
@@ -78,8 +82,9 @@ resource "yandex_compute_instance" "vm_db" {
   platform_id = "standard-v3"
 
   resources {
-    cores  = 2
-    memory = 2
+    cores         = 2
+    memory        = 2
+    core_fraction = 20
   }
 
   scheduling_policy {
@@ -96,6 +101,7 @@ resource "yandex_compute_instance" "vm_db" {
 
   network_interface {
     subnet_id          = yandex_vpc_subnet.sub_db.id
+    ip_address         = var.db_ip
     nat                = false
     security_group_ids = [yandex_vpc_security_group.sg_db.id]
   }
@@ -104,5 +110,41 @@ resource "yandex_compute_instance" "vm_db" {
     ssh-keys           = "ubuntu:${local.ssh_key}"
     serial-port-enable = 1
     user-data          = templatefile("${path.module}/cloud-init.tpl", { role = "DATABASE", port = 6000 })
+  }
+}
+
+resource "yandex_compute_instance" "vm_bastion" {
+  name        = "vm-bastion"
+  platform_id = "standard-v3"
+
+  resources {
+    cores         = 2
+    memory        = 2
+    core_fraction = 20
+  }
+
+  scheduling_policy {
+    preemptible = false
+  }
+
+  boot_disk {
+    initialize_params {
+      image_id = data.yandex_compute_image.ubuntu.id
+      size     = 10
+      type     = "network-ssd"
+    }
+  }
+
+  network_interface {
+    subnet_id          = yandex_vpc_subnet.sub_front.id # публичная подсеть
+    nat                = true                           # нужен публичный IP
+    security_group_ids = [yandex_vpc_security_group.sg_admin.id]
+    ip_address         = var.bastion_ip
+  }
+
+  metadata = {
+    ssh-keys           = "ubuntu:${local.ssh_key}"
+    serial-port-enable = 1
+    user-data          = templatefile("${path.module}/cloud-init.tpl", { role = "BASTION", port = 8080 })
   }
 }

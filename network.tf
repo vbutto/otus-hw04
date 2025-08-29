@@ -14,7 +14,7 @@ resource "yandex_vpc_subnet" "sub_back" {
   zone           = var.zone
   network_id     = yandex_vpc_network.net.id
   v4_cidr_blocks = [var.subnet_back_cidr]
-  route_table_id = yandex_vpc_route_table.rt_nat.id   # backend ходит в интернет через NAT
+  route_table_id = yandex_vpc_route_table.rt_nat.id # backend ходит в интернет через NAT
 }
 
 resource "yandex_vpc_subnet" "sub_db" {

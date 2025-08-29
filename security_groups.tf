@@ -17,6 +17,13 @@ resource "yandex_vpc_security_group" "sg_front" {
     v4_cidr_blocks = [var.my_ip]
   }
 
+  ingress {
+    protocol          = "TCP"
+    description       = "SSH from BASTION only"
+    port              = 22
+    security_group_id = yandex_vpc_security_group.sg_admin.id
+  }
+
   egress {
     protocol       = "ANY"
     description    = "Any egress"
@@ -34,6 +41,12 @@ resource "yandex_vpc_security_group" "sg_back" {
     description       = "App from FRONTEND only"
     port              = 3000
     security_group_id = yandex_vpc_security_group.sg_front.id
+  }
+  ingress {
+    protocol          = "TCP"
+    description       = "SSH from BASTION only"
+    port              = 22
+    security_group_id = yandex_vpc_security_group.sg_admin.id
   }
 
   egress {
@@ -55,9 +68,35 @@ resource "yandex_vpc_security_group" "sg_db" {
     security_group_id = yandex_vpc_security_group.sg_back.id
   }
 
+  ingress {
+    protocol          = "TCP"
+    description       = "SSH from BASTION only"
+    port              = 22
+    security_group_id = yandex_vpc_security_group.sg_admin.id
+  }
+
   egress {
     protocol       = "ANY"
     description    = "Responses/egress inside VPC"
+    v4_cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+# Разрешаем SSH с твоего IP на bastion
+resource "yandex_vpc_security_group" "sg_admin" {
+  name       = "sg-admin-bastion"
+  network_id = yandex_vpc_network.net.id
+
+  ingress {
+    protocol       = "TCP"
+    description    = "SSH from my IP"
+    port           = 22
+    v4_cidr_blocks = [var.my_ip]
+  }
+
+  egress {
+    protocol       = "ANY"
+    description    = "Any egress (to reach backend/db via SSH)"
     v4_cidr_blocks = ["0.0.0.0/0"]
   }
 }
